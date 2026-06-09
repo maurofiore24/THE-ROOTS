@@ -1,0 +1,6 @@
+{
+  "name": "Porodično Stablo",
+  "description": "Predivna interaktivna aplikacija za kreiranje, vizuelizaciju i čuvanje vašeg porodičnog stabla.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
