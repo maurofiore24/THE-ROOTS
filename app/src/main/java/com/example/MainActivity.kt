@@ -63,9 +63,8 @@ class MainActivity : ComponentActivity() {
                             // This is handled by opening dialog, managed in Core Dashboard layout
                         },
                         onEditMember = { viewModel.updateMember(it) },
-                        onAddStandaloneRoot = { 
-                            // Inserts a new base starting member in database if empty
-                            viewModel.addRootMember("Jovan", "Marković", "MALE", "15.05.1950", "Topola")
+                        onAddStandaloneRoot = { fName, lName, gender, bDate, bPl ->
+                            viewModel.addRootMember(fName, lName, gender, bDate, bPl)
                         },
                         onResetDemo = { viewModel.resetDatabaseToDemo() },
                         onClearAll = { viewModel.clearDatabase() },

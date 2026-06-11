@@ -33,12 +33,18 @@ class FamilyViewModel(application: Application) : AndroidViewModel(application) 
                 initialValue = emptyList()
             )
         
-        // Seed database if empty, and default focus to main member (index 4)
+        // Seed database ONLY ONCE on first-time cold startup if database is completely empty
+        viewModelScope.launch {
+            val initialList = repository.allMembers.first()
+            if (initialList.isEmpty()) {
+                seeder.seedDynasty("markovic")
+            }
+        }
+        
+        // Maintain the active focus member depending on the active membership list
         viewModelScope.launch {
             allMembers.collectLatest { list ->
-                if (list.isEmpty()) {
-                    seeder.seedDynasty("markovic")
-                } else if (_focusMemberId.value == null) {
+                if (list.isNotEmpty() && _focusMemberId.value == null) {
                     val defaultFocus = if (list.size > 4) list[4] else list.firstOrNull()
                     _focusMemberId.value = defaultFocus?.id
                 }

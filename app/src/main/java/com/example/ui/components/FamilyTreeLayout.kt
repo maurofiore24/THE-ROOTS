@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -94,7 +95,7 @@ fun FamilyTreeDashboard(
     onSetFocus: (Long) -> Unit,
     onAddRelative: (relateToId: Long, relType: String) -> Unit,
     onEditMember: (FamilyMember) -> Unit,
-    onAddStandaloneRoot: () -> Unit,
+    onAddStandaloneRoot: (firstName: String, lastName: String, gender: String, birthDate: String?, birthPlace: String?) -> Unit,
     onResetDemo: () -> Unit,
     onClearAll: () -> Unit,
     onAddRelativeDirectly: (
@@ -114,50 +115,51 @@ fun FamilyTreeDashboard(
     var showEditDialog by remember { mutableStateOf<FamilyMember?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
     var showAddStandaloneDialog by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) }
 
     // Theme Config Colors
     val appColors = when (currentTheme) {
         VisualTheme.FROSTED_GLASS -> ThemeConfig(
-            bgBrush = Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF020617))),
-            surfaceColor = Color(0xFF1E293B).copy(alpha = 0.7f),
-            textColor = Color(0xFFF8FAFC),
-            textSecondaryColor = Color(0xFF94A3B8),
-            accentColor = Color(0xFF6366F1), // Indigo
-            borderColor = Color(0xFF334155).copy(alpha = 0.5f),
-            glowColor = Color(0xFF818CF8),
+            bgBrush = Brush.verticalGradient(listOf(Color(0xFF0F062E), Color(0xFF2E0854), Color(0xFF03010E))),
+            surfaceColor = Color(0xFF1E103E).copy(alpha = 0.8f),
+            textColor = Color(0xFFFDF4FF),
+            textSecondaryColor = Color(0xFFA78BFA),
+            accentColor = Color(0xFFD946EF),
+            borderColor = Color(0xFF8B5CF6).copy(alpha = 0.6f),
+            glowColor = Color(0xFF00FFFF),
             fontFamily = FontFamily.SansSerif,
             meshBlurEnabled = true
         )
         VisualTheme.VINTAGE_PARCHMENT -> ThemeConfig(
-            bgBrush = Brush.linearGradient(listOf(Color(0xFFFAF6EE), Color(0xFFEFE9DC))),
-            surfaceColor = Color(0xFFF3EAD3),
-            textColor = Color(0xFF2B2519),
-            textSecondaryColor = Color(0xFF6E6047),
-            accentColor = Color(0xFF8C6239), // Warm wood brown
-            borderColor = Color(0xFFDCD2B3),
-            glowColor = Color(0xFFB5936C),
+            bgBrush = Brush.linearGradient(listOf(Color(0xFFFFF9E6), Color(0xFFF3E5C8), Color(0xFFDFD0B3))),
+            surfaceColor = Color(0xFFEADBBE),
+            textColor = Color(0xFF3B2314),
+            textSecondaryColor = Color(0xFF9E2A2B),
+            accentColor = Color(0xFFB45309),
+            borderColor = Color(0xFFD97706),
+            glowColor = Color(0xFFFBBF24),
             fontFamily = FontFamily.Serif,
             meshBlurEnabled = false
         )
         VisualTheme.NORDIJSKI_MINIMAL -> ThemeConfig(
-            bgBrush = Brush.verticalGradient(listOf(Color(0xFFF8F9FA), Color(0xFFE9ECEF))),
-            surfaceColor = Color(0xFFFFFFFF),
-            textColor = Color(0xFF212529),
-            textSecondaryColor = Color(0xFF6C757D),
-            accentColor = Color(0xFF343A40), // Hard Charcoal
-            borderColor = Color(0xFFDEE2E6),
-            glowColor = Color(0xFFADB5BD),
+            bgBrush = Brush.verticalGradient(listOf(Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF022C22))),
+            surfaceColor = Color(0xFF065F46).copy(alpha = 0.85f),
+            textColor = Color(0xFFF0FDF4),
+            textSecondaryColor = Color(0xFF34D399),
+            accentColor = Color(0xFF10B981),
+            borderColor = Color(0xFF059669).copy(alpha = 0.6f),
+            glowColor = Color(0xFF34D399),
             fontFamily = FontFamily.SansSerif,
             meshBlurEnabled = false
         )
         VisualTheme.CYBERPUNK -> ThemeConfig(
-            bgBrush = Brush.verticalGradient(listOf(Color(0xFF05050A), Color(0xFF0F0A1C))),
-            surfaceColor = Color(0xFF150F26).copy(alpha = 0.85f),
-            textColor = Color(0xFF00FFCC), // Fluorescent Green
-            textSecondaryColor = Color(0xFFFF007F), // Neon Pink
-            accentColor = Color(0xFF00BFFF), // Deep Sky Neon Blue
-            borderColor = Color(0xFFFF007F).copy(alpha = 0.4f),
-            glowColor = Color(0xFF00FFCC),
+            bgBrush = Brush.verticalGradient(listOf(Color(0xFF450A0A), Color(0xFF2D0606), Color(0xFF180000))),
+            surfaceColor = Color(0xFF7F1D1D).copy(alpha = 0.65f),
+            textColor = Color(0xFFFFFBEB),
+            textSecondaryColor = Color(0xFFFBBF24),
+            accentColor = Color(0xFFF59E0B),
+            borderColor = Color(0xFFFBBF24).copy(alpha = 0.7f),
+            glowColor = Color(0xFFFFD700),
             fontFamily = FontFamily.Monospace,
             meshBlurEnabled = true
         )
@@ -273,7 +275,7 @@ fun FamilyTreeDashboard(
                 ) {
                     Column {
                         Text(
-                            text = t("KOREN", "KOREN", "КОРЕНЬ", "KOREN", "KOREN", currentLanguage),
+                            text = t("ROOT", "KOREN", "КОРЕНЬ", "WURZEL", "RACINE", currentLanguage),
                             fontFamily = appColors.fontFamily,
                             fontWeight = FontWeight.Black,
                             fontSize = 24.sp,
@@ -393,9 +395,41 @@ fun FamilyTreeDashboard(
                                 expanded = dynastyMenuExpanded,
                                 onDismissRequest = { dynastyMenuExpanded = false },
                                 modifier = Modifier
-                                    .width(280.dp)
+                                    .width(290.dp)
                                     .background(appColors.surfaceColor)
                             ) {
+                                DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.AddCircle,
+                                            contentDescription = null,
+                                            tint = appColors.accentColor
+                                        )
+                                    },
+                                    text = {
+                                        Column {
+                                             Text(
+                                                 t("👥 Start My Family (Clear All)", "👥 Moja Porodica (Započni sveže)", "👥 Начать мою семью (Очистить)", "👥 Meine eigene Familie (Löschen)", "👥 Ma propre famille (Effacer tout)", currentLanguage),
+                                                 color = appColors.accentColor,
+                                                 fontSize = 13.sp,
+                                                 fontWeight = FontWeight.ExtraBold,
+                                                 fontFamily = appColors.fontFamily
+                                             )
+                                             Text(
+                                                 t("Erase demo data to build your own", "Uklonite primer i počnite svoje stablo", "Очистить демо-данные для создания своего", "Demo-Daten löschen und neu starten", "Effacer la démo pour créer votre arbre", currentLanguage),
+                                                 color = appColors.textSecondaryColor,
+                                                 fontSize = 10.sp,
+                                                 fontFamily = appColors.fontFamily
+                                             )
+                                        }
+                                    },
+                                    onClick = {
+                                        dynastyMenuExpanded = false
+                                        onClearAll()
+                                    }
+                                )
+                                HorizontalDivider(color = appColors.borderColor.copy(alpha = 0.4f))
+
                                 val dynasties = listOf(
                                     Triple("markovic", "Marković Family (Demo)", "🇷🇸 Porodica Marković (Demo)"),
                                     Triple("nemanjici", "Nemanjić Dynasty (Medieval)", "🇷🇸 Dinastija Nemanjića"),
@@ -477,6 +511,68 @@ fun FamilyTreeDashboard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
+
+                        // Social sharing button
+                        IconButton(
+                            onClick = { showShareDialog = true },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(appColors.surfaceColor, CircleShape)
+                                .border(1.dp, appColors.borderColor, CircleShape)
+                                .testTag("social_share_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = t("Share Family Tree", "Podeli Porodično Stablo", "Поделиться древом", "Stammbaum teilen", "Partager l'arbre", currentLanguage),
+                                tint = appColors.accentColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Extremely Beautiful Horizontal Theme Selector (highly visible!)
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val themesList = listOf(
+                        Pair(VisualTheme.FROSTED_GLASS, Triple("🌌 Cosmic Nebula", "🌌 Kosmička Nebula", "🌌 Космическая Туманность")),
+                        Pair(VisualTheme.VINTAGE_PARCHMENT, Triple("📜 Epic Parchment", "📜 Carski Pergament", "📜 Эпический Пергамент")),
+                        Pair(VisualTheme.NORDIJSKI_MINIMAL, Triple("🌲 Emerald Dynasty", "🌲 Smaragdno Carstvo", "🌲 Изумрудное Царство")),
+                        Pair(VisualTheme.CYBERPUNK, Triple("👑 Royal Gold & Red", "👑 Kraljevski Rubin i Zlato", "👑 Королевский Рубин и Золото"))
+                    )
+                    
+                    items(themesList) { (themeKey, labels) ->
+                        val themeName = when (currentLanguage) {
+                            "SRB" -> labels.second
+                            "RUS" -> labels.third
+                            else -> labels.first
+                        }
+                        val isSelected = currentTheme == themeKey
+                        val chipBg = if (isSelected) appColors.accentColor else appColors.surfaceColor
+                        val chipBorderColor = if (isSelected) appColors.glowColor else appColors.borderColor
+                        val chipTextColor = if (isSelected) Color.White else appColors.textColor
+                        
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(chipBg)
+                                .border(1.2.dp, chipBorderColor, RoundedCornerShape(20.dp))
+                                .clickable { currentTheme = themeKey }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = themeName,
+                                color = chipTextColor,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                                fontFamily = appColors.fontFamily
+                            )
+                        }
                     }
                 }
 
@@ -499,7 +595,14 @@ fun FamilyTreeDashboard(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Stablo je trenutno prazno",
+                                text = t(
+                                    "Tree is currently empty",
+                                    "Stablo je trenutno prazno",
+                                    "Древо в данный момент пусто",
+                                    "Stammbaum ist leer",
+                                    "L'arbre est actuellement vide",
+                                    currentLanguage
+                                ),
                                 color = appColors.textColor,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = appColors.fontFamily,
@@ -507,7 +610,14 @@ fun FamilyTreeDashboard(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "Pokrenite digitalni koren porodice dodavanjem prvog člana ili učitavanjem bogatog istorijskog demo stabla.",
+                                text = t(
+                                    "Start your digital family roots by adding the first member or loading a rich historical demo family tree.",
+                                    "Pokrenite digitalni koren porodice dodavanjem prvog člana ili učitavanjem bogatog istorijskog demo stabla.",
+                                    "Создайте цифровой корень вашей семьи, добавив первого члена или загрузив историческое демо-древо.",
+                                    "Starten Sie Ihre digitalen Familienwurzeln, indem Sie das erste Mitglied hinzufügen oder einen historischen Demo-Stammbaum laden.",
+                                    "Démarrez vos racines familiales numériques en ajoutant le premier membre ou en chargeant un arbre historique de démonstration.",
+                                    currentLanguage
+                                ),
                                 color = appColors.textSecondaryColor,
                                 fontSize = 12.sp,
                                 fontFamily = appColors.fontFamily,
@@ -519,13 +629,34 @@ fun FamilyTreeDashboard(
                                     onClick = onResetDemo,
                                     colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
                                 ) {
-                                    Text("Učitaj Demo Stablo", color = Color.White)
+                                    Text(
+                                        text = t(
+                                            "Load Demo Tree",
+                                            "Učitaj Demo Stablo",
+                                            "Загрузить демо-древо",
+                                            "Demo-Baum laden",
+                                            "Charger l'arbre démo",
+                                            currentLanguage
+                                        ),
+                                        color = Color.White,
+                                        fontFamily = appColors.fontFamily
+                                    )
                                 }
                                 OutlinedButton(
                                     onClick = { showAddStandaloneDialog = true },
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textColor)
                                 ) {
-                                    Text("Dodaj Ručno")
+                                    Text(
+                                        text = t(
+                                            "Add Manually",
+                                            "Dodaj Ručno",
+                                            "Добавить вручную",
+                                            "Manuell hinzufügen",
+                                            "Ajouter manuellement",
+                                            currentLanguage
+                                        ),
+                                        fontFamily = appColors.fontFamily
+                                    )
                                 }
                             }
                         }
@@ -603,8 +734,16 @@ fun FamilyTreeDashboard(
         AlertDialog(
             onDismissRequest = { showAddDialog = null },
             title = {
+                val relTypeStr = when (relationshipType.uppercase()) {
+                    "FATHER" -> t("Father", "Otac", "Отец", "Vater", "Père", currentLanguage)
+                    "MOTHER" -> t("Mother", "Majka", "Мать", "Mutter", "Mère", currentLanguage)
+                    "SPOUSE" -> t("Spouse", "Supružnik", "Супруг(а)", "Ehepartner", "Époux(se)", currentLanguage)
+                    "CHILD" -> t("Child", "Dete", "Ребенок", "Kind", "Enfant", currentLanguage)
+                    "SIBLING" -> t("Sibling", "Brat/Sestra", "Брат/Сестра", "Geschwister", "Frère/Sœur", currentLanguage)
+                    else -> relationshipType
+                }
                 Text(
-                    text = "Dodaj Srodnika: ${relationshipType.uppercase()} za člana ${pivotPerson?.firstName}",
+                    text = "${t("Add Relative", "Dodaj Srodnika", "Добавить родственника", "Verwandten hinzufügen", "Ajouter un parent", currentLanguage)}: $relTypeStr ${t("for member", "za člana", "для члена", "für Mitglied", "pour le membre", currentLanguage)} ${pivotPerson?.firstName}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = appColors.fontFamily
@@ -620,70 +759,70 @@ fun FamilyTreeDashboard(
                     OutlinedTextField(
                         value = firstName,
                         onValueChange = { firstName = it },
-                        label = { Text("Ime *") },
+                        label = { Text(t("First Name *", "Ime *", "Имя *", "Vorname *", "Prénom *", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth().testTag("input_fname")
                     )
                     OutlinedTextField(
                         value = lastName,
                         onValueChange = { lastName = it },
-                        label = { Text("Prezime *") },
+                        label = { Text(t("Last Name *", "Prezime *", "Фамилия *", "Nachname *", "Nom de famille *", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth().testTag("input_lname")
                     )
                     
                     // Gender selection
-                    Text("Pol:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(t("Gender:", "Pol:", "Пол:", "Geschlecht:", "Genre:", currentLanguage), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, fontFamily = appColors.fontFamily)
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = gender == "MALE", onClick = { gender = "MALE" })
-                            Text("Muški", modifier = Modifier.clickable { gender = "MALE" })
+                            Text(t("Male", "Muški", "Мужской", "Männlich", "Masculin", currentLanguage), modifier = Modifier.clickable { gender = "MALE" }, fontFamily = appColors.fontFamily)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = gender == "FEMALE", onClick = { gender = "FEMALE" })
-                            Text("Ženski", modifier = Modifier.clickable { gender = "FEMALE" })
+                            Text(t("Female", "Ženski", "Женский", "Weiblich", "Féminin", currentLanguage), modifier = Modifier.clickable { gender = "FEMALE" }, fontFamily = appColors.fontFamily)
                         }
                     }
 
                     OutlinedTextField(
                         value = birthDate,
                         onValueChange = { birthDate = it },
-                        label = { Text("Datum rođenja (npr. 12.06.1950)") },
+                        label = { Text(t("Birth Date (e.g. 12.06.1950)", "Datum rođenja (npr. 12.06.1950)", "Дата рождения (напр. 12.06.1950)", "Geburtsdatum (z.B. 12.06.1950)", "Date de naissance (ex. 12.06.1950)", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = birthPlace,
                         onValueChange = { birthPlace = it },
-                        label = { Text("Mesto rođenja (npr. Čačak, Srbija)") },
+                        label = { Text(t("Birth Place (e.g. London, UK)", "Mesto rođenja (npr. Čačak, Srbija)", "Место рождения (напр. Москва, РФ)", "Geburtsort (z.B. Berlin, Deutschland)", "Lieu de naissance (ex. Paris, France)", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = deathDate,
                         onValueChange = { deathDate = it },
-                        label = { Text("Datum smrti (ako je preminuo)") },
+                        label = { Text(t("Death Date (if deceased)", "Datum smrti (ako je preminuo)", "Дата смерти (если умер)", "Todesdatum (falls verstorben)", "Date de décès (si décédé)", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = deathPlace,
                         onValueChange = { deathPlace = it },
-                        label = { Text("Mesto smrti") },
+                        label = { Text(t("Death Place", "Mesto smrti", "Место смерти", "Todesort", "Lieu de décès", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = biography,
                         onValueChange = { biography = it },
-                        label = { Text("Kratka sećanja i biografija") },
+                        label = { Text(t("Short memories and biography", "Kratka sećanja i biografija", "Краткие воспоминания и биография", "Kurze Erinnerungen und Biografie", "Souvenirs courts et biographie", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 4
                     )
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
-                        label = { Text("Telefon") },
+                        label = { Text(t("Phone", "Telefon", "Телефон", "Telefon", "Téléphone", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email (koristiće se za saradnju)") },
+                        label = { Text(t("Email (will be used for collaboration)", "Email (koristiće se za saradnju)", "Email (будет использоваться для сотрудничества)", "E-Mail (wird für Zusammenarbeit verwendet)", "E-mail (sera utilisé pour la collaboration)", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -705,12 +844,12 @@ fun FamilyTreeDashboard(
                     modifier = Modifier.testTag("confirm_add_member"),
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
                 ) {
-                    Text("Sačuvaj", color = Color.White)
+                    Text(t("Save", "Sačuvaj", "Сохранить", "Speichern", "Enregistrer", currentLanguage), color = Color.White, fontFamily = appColors.fontFamily)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = null }) {
-                    Text("Otkaži")
+                    Text(t("Cancel", "Otkaži", "Отмена", "Abbrechen", "Annuler", currentLanguage), fontFamily = appColors.fontFamily)
                 }
             }
         )
@@ -733,7 +872,7 @@ fun FamilyTreeDashboard(
             onDismissRequest = { showEditDialog = null },
             title = {
                 Text(
-                    text = "Izmeni Profil: ${memberToEdit.firstName} ${memberToEdit.lastName}",
+                    text = "${t("Edit Profile", "Izmeni Profil", "Редактировать профиль", "Profil bearbeiten", "Modifier le profil", currentLanguage)}: ${memberToEdit.firstName} ${memberToEdit.lastName}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = appColors.fontFamily
@@ -749,56 +888,56 @@ fun FamilyTreeDashboard(
                     OutlinedTextField(
                         value = firstName,
                         onValueChange = { firstName = it },
-                        label = { Text("Ime") },
+                        label = { Text(t("First Name", "Ime", "Имя", "Vorname", "Prénom", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = lastName,
                         onValueChange = { lastName = it },
-                        label = { Text("Prezime") },
+                        label = { Text(t("Last Name", "Prezime", "Фамилия", "Nachname", "Nom de famille", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = birthDate,
                         onValueChange = { birthDate = it },
-                        label = { Text("Datum rođenja") },
+                        label = { Text(t("Birth Date", "Datum rođenja", "Дата рождения", "Geburtsdatum", "Date de naissance", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = birthPlace,
                         onValueChange = { birthPlace = it },
-                        label = { Text("Mesto rođenja") },
+                        label = { Text(t("Birth Place", "Mesto rođenja", "Место рождения", "Geburtsort", "Lieu de naissance", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = deathDate,
                         onValueChange = { deathDate = it },
-                        label = { Text("Datum smrti") },
+                        label = { Text(t("Death Date", "Datum smrti", "Дата смерти", "Todesdatum", "Date de décès", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = deathPlace,
                         onValueChange = { deathPlace = it },
-                        label = { Text("Mesto smrti") },
+                        label = { Text(t("Death Place", "Mesto smrti", "Место смерти", "Todesort", "Lieu de décès", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = biography,
                         onValueChange = { biography = it },
-                        label = { Text("Detaljna Biografija & Beleške") },
+                        label = { Text(t("Detailed Biography & Notes", "Detaljna Biografija & Beleške", "Подробная биография и заметки", "Detaillierte Biografie & Notizen", "Biographie détaillée & Notes", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 5
                     )
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
-                        label = { Text("Telefon") },
+                        label = { Text(t("Phone", "Telefon", "Телефон", "Telefon", "Téléphone", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email adresa") },
+                        label = { Text(t("Email Address", "Email adresa", "Адрес эл. почты", "E-Mail-Adresse", "Adresse e-mail", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -823,12 +962,12 @@ fun FamilyTreeDashboard(
                     modifier = Modifier.testTag("confirm_edit_member"),
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
                 ) {
-                    Text("Sačuvaj Promene", color = Color.White)
+                    Text(t("Save Changes", "Sačuvaj Promene", "Сохранить изменения", "Änderungen speichern", "Enregistrer les modifications", currentLanguage), color = Color.White, fontFamily = appColors.fontFamily)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = null }) {
-                    Text("Odbaci")
+                    Text(t("Discard", "Odbaci", "Сбросить", "Verwerfen", "Abandonner", currentLanguage), fontFamily = appColors.fontFamily)
                 }
             }
         )
@@ -844,42 +983,55 @@ fun FamilyTreeDashboard(
 
         AlertDialog(
             onDismissRequest = { showAddStandaloneDialog = false },
-            title = { Text("Postavi Prvog Pretka (Koren)", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    text = t(
+                        "Set First Ancestor (Root)",
+                        "Postavi Prvog Pretka (Koren)",
+                        "Установить первого предка (Корень)",
+                        "Ersten Vorfahren festlegen (Wurzel)",
+                        "Définir le premier ancêtre (Racine)",
+                        currentLanguage
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = appColors.fontFamily
+                )
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = firstName,
                         onValueChange = { firstName = it },
-                        label = { Text("Ime") },
+                        label = { Text(t("First Name", "Ime", "Имя", "Vorname", "Prénom", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = lastName,
                         onValueChange = { lastName = it },
-                        label = { Text("Prezime") },
+                        label = { Text(t("Last Name", "Prezime", "Фамилия", "Nachname", "Nom de famille", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text("Pol:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(t("Gender:", "Pol:", "Пол:", "Geschlecht:", "Genre:", currentLanguage), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, fontFamily = appColors.fontFamily)
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = gender == "MALE", onClick = { gender = "MALE" })
-                            Text("Muški")
+                            Text(t("Male", "Muški", "Мужской", "Männlich", "Masculin", currentLanguage), modifier = Modifier.clickable { gender = "MALE" }, fontFamily = appColors.fontFamily)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = gender == "FEMALE", onClick = { gender = "FEMALE" })
-                            Text("Ženski")
+                            Text(t("Female", "Ženski", "Женский", "Weiblich", "Féminin", currentLanguage), modifier = Modifier.clickable { gender = "FEMALE" }, fontFamily = appColors.fontFamily)
                         }
                     }
                     OutlinedTextField(
                         value = birthDate,
                         onValueChange = { birthDate = it },
-                        label = { Text("Datum rođenja") },
+                        label = { Text(t("Birth Date", "Datum rođenja", "Дата рождения", "Geburtsdatum", "Date de naissance", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = birthPlace,
                         onValueChange = { birthPlace = it },
-                        label = { Text("Mesto rođenja") },
+                        label = { Text(t("Birth Place", "Mesto rođenja", "Место рождения", "Geburtsort", "Lieu de naissance", currentLanguage)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -889,18 +1041,24 @@ fun FamilyTreeDashboard(
                     onClick = {
                         if (firstName.isNotBlank() && lastName.isNotBlank()) {
                             // Link into root via action
-                            onAddStandaloneRoot()
+                            onAddStandaloneRoot(
+                                firstName, 
+                                lastName, 
+                                gender, 
+                                birthDate.ifBlank { null }, 
+                                birthPlace.ifBlank { null }
+                            )
                             showAddStandaloneDialog = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
                 ) {
-                    Text("Napravi Koren", color = Color.White)
+                    Text(t("Create Root", "Napravi Koren", "Создать корень", "Wurzel erstellen", "Créer la racine", currentLanguage), color = Color.White, fontFamily = appColors.fontFamily)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddStandaloneDialog = false }) {
-                    Text("Poništi")
+                    Text(t("Cancel", "Poništi", "Отмена", "Abbrechen", "Annuler", currentLanguage), fontFamily = appColors.fontFamily)
                 }
             }
         )
@@ -909,18 +1067,33 @@ fun FamilyTreeDashboard(
     // Print On Demand Wizard dialog
     if (showPrintDialog) {
         var printOptionSelected by remember { mutableStateOf(0) } // 0: Luksuzna Knjiga, 1: Poster
-        var sizeSelected by remember { mutableStateOf("A1 (Veliki Poster)") }
+        var sizeSelected by remember { mutableStateOf("A1 (Veliki Poster) - €29") }
         var leatherColorSelected by remember { mutableStateOf("Tamno Crvena sa zlatorezom") }
         var generatedStatus by remember { mutableStateOf<String?>(null) }
         var orderComplete by remember { mutableStateOf(false) }
 
         AlertDialog(
-            onDismissRequest = { showPrintDialog = false },
+            onDismissRequest = { 
+                showPrintDialog = false
+                orderComplete = false
+                generatedStatus = null
+            },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.LocalPrintshop, null, tint = appColors.accentColor)
                     Spacer(Modifier.width(8.dp))
-                    Text("Magično Dugme: Štampaj Nasleđe", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = t(
+                            "Magic Button: Print Heritage",
+                            "Magično Dugme: Štampaj Nasleđe",
+                            "Волшебная кнопка: Печать наследия",
+                            "Magischer Button: Erbe drucken",
+                            "Bouton magique: Imprimer l'héritage",
+                            currentLanguage
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = appColors.fontFamily
+                    )
                 }
             },
             text = {
@@ -929,9 +1102,17 @@ fun FamilyTreeDashboard(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        "U partnerstvu sa lokalnim umetničkim štamparijama, jednim klikom pretvorite vaše digitalno stablo u prelepe fizičke poklone.",
+                        text = t(
+                            "In partnership with local art print shops, transform your digital tree into beautiful physical heritage gifts in one click.",
+                            "U partnerstvu sa lokalnim umetničkim štamparijama, jednim klikom pretvorite vaše digitalno stablo u prelepe fizičke poklone.",
+                            "В партнерстве с местными типографиями превратите свое цифровое древо в прекрасные физические подарки в один клик.",
+                            "In Partnerschaft mit lokalen Kunstdruckereien verwandeln Sie Ihren digitalen Baum mit einem Klick in wunderschöne physische Geschenke.",
+                            "En partenariat avec des imprimeries d'art locales, transformez votre arbre numérique en de magnifiques cadeaux physiques en un clic.",
+                            currentLanguage
+                        ),
                         fontSize = 12.sp,
-                        color = appColors.textSecondaryColor
+                        color = appColors.textSecondaryColor,
+                        fontFamily = appColors.fontFamily
                     )
 
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -943,7 +1124,17 @@ fun FamilyTreeDashboard(
                                 contentColor = if (printOptionSelected == 0) Color.White else appColors.textColor
                             )
                         ) {
-                            Text("Kožna Knjiga")
+                            Text(
+                                text = t(
+                                    "Leather Book",
+                                    "Kožna Knjiga",
+                                    "Кожаная книга",
+                                    "Lederbuch",
+                                    "Livre en cuir",
+                                    currentLanguage
+                                ),
+                                fontFamily = appColors.fontFamily
+                            )
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -954,41 +1145,93 @@ fun FamilyTreeDashboard(
                                 contentColor = if (printOptionSelected == 1) Color.White else appColors.textColor
                             )
                         ) {
-                            Text("Zidni Poster")
+                            Text(
+                                text = t(
+                                    "Wall Poster",
+                                    "Zidni Poster",
+                                    "Настенный постер",
+                                    "Wandposter",
+                                    "Affiche murale",
+                                    currentLanguage
+                                ),
+                                fontFamily = appColors.fontFamily
+                            )
                         }
                     }
 
                     if (printOptionSelected == 0) {
                         // Leather book config
-                        Text("Konfiguracija Knjige", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = t(
+                                "Book Configuration",
+                                "Konfiguracija Knjige",
+                                "Конфигурация книги",
+                                "Buchkonfiguration",
+                                "Configuration du livre",
+                                currentLanguage
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            fontFamily = appColors.fontFamily
+                        )
                         
                         val bookStyles = listOf(
-                            "Tamno Crvena sa zlatorezom", 
-                            "Kraljevski Plava sa srebrnim vezom", 
-                            "Arhivska Smeđa koža (Vintage)"
+                            Triple(
+                                "Tamno Crvena sa zlatorezom",
+                                "Dark Red with gold leaf",
+                                "Dark Red with gold leaf || Tamno Crvena sa zlatorezom || Темно-красный с золотым тиснением || Dunkelrot mit Goldschnitt || Rouge foncé avec dorure"
+                            ),
+                            Triple(
+                                "Kraljevski Plava sa srebrnim vezom",
+                                "Royal Blue with silver embroidery",
+                                "Royal Blue with silver embroidery || Kraljevski Plava sa srebrnim vezom || Королевский синий с серебряной вышивкой || Königsblau mit Silberstickerei || Bleu royal avec broderie d'argent"
+                            ),
+                            Triple(
+                                "Arhivska Smeđa koža (Vintage)",
+                                "Archival Brown leather (Vintage)",
+                                "Archival Brown leather (Vintage) || Arhivska Smeđa koža (Vintage) || Архивная коричневая кожа (Винтаж) || Archiv-Ziegenleder Braun (Vintage) || Cuir marron d'archive (Vintage)"
+                            )
                         )
-                        bookStyles.forEach { style ->
+                        bookStyles.forEach { styleTriple ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { leatherColorSelected = style }
+                                    .clickable { leatherColorSelected = styleTriple.first }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    selected = leatherColorSelected == style,
-                                    onClick = { leatherColorSelected = style }
+                                    selected = leatherColorSelected == styleTriple.first,
+                                    onClick = { leatherColorSelected = styleTriple.first }
                                 )
-                                Text(style, style = MaterialTheme.typography.bodyMedium, color = appColors.textColor)
+                                Text(
+                                    text = getLocalizedText(styleTriple.third, currentLanguage),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = appColors.textColor,
+                                    fontFamily = appColors.fontFamily
+                                )
                             }
                         }
 
                         Spacer(Modifier.height(8.dp))
-                        Text("Sadržina:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text(
-                            "- Generiše do ${allMembers.size} profila srodnika sa fotografijama\n- Uključuje sve sakupljene porodične priče i crtice\n- Luksuzni tvrdi povez sa porodičnim gerbom.",
+                            text = "${t("Content", "Sadržina", "Содержание", "Inhalt", "Contenu", currentLanguage)}:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            fontFamily = appColors.fontFamily
+                        )
+                        Text(
+                            text = t(
+                                "- Generates up to ${allMembers.size} relative profiles with photos\n- Includes all gathered family stories and notes\n- Luxury hardcover with a family crest foil stamp.",
+                                "- Generiše do ${allMembers.size} profila srodnika sa fotografijama\n- Uključuje sve sakupljene porodične priče i crtice\n- Luksuzni tvrdi povez sa porodičnim gerbom.",
+                                "- Создает до ${allMembers.size} профилей родственников с фотографиями\n- Включает все собранные семейные истории и заметки\n- Роскошный твердый переплет с тиснением фамильного герба.",
+                                "- Generiert bis zu ${allMembers.size} Verwandtenprofile mit Fotos\n- Enthält alle gesammelten Familiengeschichten und Notizen\n- Luxuriöser Hardcover-Einband mit Familienwappen-Prägung.",
+                                "- Génère jusqu'à ${allMembers.size} profils de parents avec photos\n- Comprend toutes les histoires et notes familiales recueillies\n- Couverture rigide de luxe avec gaufrage des armoiries familiales.",
+                                currentLanguage
+                            ),
                             fontSize = 11.sp,
-                            color = appColors.textSecondaryColor
+                            color = appColors.textSecondaryColor,
+                            fontFamily = appColors.fontFamily
                         )
 
                         Spacer(Modifier.height(8.dp))
@@ -1001,42 +1244,82 @@ fun FamilyTreeDashboard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("Cena: €59.00", fontWeight = FontWeight.Bold, color = appColors.textColor)
-                                Text("Dostava besplatna za Srbiju", fontSize = 10.sp, color = appColors.textSecondaryColor)
+                                Text(
+                                    text = "${t("Price", "Cena", "Цена", "Preis", "Prix", currentLanguage)}: €59.00",
+                                    fontWeight = FontWeight.Bold,
+                                    color = appColors.textColor,
+                                    fontFamily = appColors.fontFamily
+                                )
+                                Text(
+                                    text = t("Free delivery", "Dostava besplatna", "Бесплатная доставка", "Kostenlose Lieferung", "Livraison gratuite", currentLanguage),
+                                    fontSize = 10.sp,
+                                    color = appColors.textSecondaryColor,
+                                    fontFamily = appColors.fontFamily
+                                )
                             }
                             Text(
-                                "Marža zarada: 45%",
+                                text = "${t("Profit margin", "Marža zarada", "Маржа прибыли", "Gewinnspanne", "Marge bénéficiaire", currentLanguage)}: 45%",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color(0xFF10B981)
+                                color = Color(0xFF10B981),
+                                fontFamily = appColors.fontFamily
                             )
                         }
                     } else {
                         // Poster config
-                        Text("Konfiguracija Postera", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = t(
+                                "Poster Configuration",
+                                "Konfiguracija Postera",
+                                "Конфигурация постера",
+                                "Posterkonfiguration",
+                                "Configuration de l'affiche",
+                                currentLanguage
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            fontFamily = appColors.fontFamily
+                        )
                         
-                        val sizes = listOf("A1 (Veliki Poster) - €29", "A2 (Srednji Poster) - €19", "B1 Premijum - €39")
-                        sizes.forEach { size ->
+                        val sizes = listOf(
+                            Triple("A1 (Veliki Poster) - €29", "A1 (Large Poster) - €29", "A1 (Large Poster) - €29 || A1 (Veliki Poster) - €29 || A1 (Большой постер) - €29 || A1 (Großes Poster) - €29 || A1 (Grande affiche) - €29"),
+                            Triple("A2 (Srednji Poster) - €19", "A2 (Medium Poster) - €19", "A2 (Medium Poster) - €19 || A2 (Srednji Poster) - €19 || A2 (Средний постер) - €19 || A2 (Mittleres Poster) - €19 || A2 (Affiche moyenne) - €19"),
+                            Triple("B1 Premijum - €39", "B1 Premium - €39", "B1 Premium - €39 || B1 Premijum - €39 || B1 Премиум - €39 || B1 Premium - €39 || B1 Premium - €39")
+                        )
+                        sizes.forEach { sizeTriple ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { sizeSelected = size }
+                                    .clickable { sizeSelected = sizeTriple.first }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    selected = sizeSelected == size,
-                                    onClick = { sizeSelected = size }
+                                    selected = sizeSelected == sizeTriple.first,
+                                    onClick = { sizeSelected = sizeTriple.first }
                                 )
-                                Text(size, style = MaterialTheme.typography.bodyMedium, color = appColors.textColor)
+                                Text(
+                                    text = getLocalizedText(sizeTriple.third, currentLanguage),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = appColors.textColor,
+                                    fontFamily = appColors.fontFamily
+                                )
                             }
                         }
 
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Poster se štampa na 250g ultra-mat vrelom papiru sa detaljnim vektorskim prikazom stabla i grana. Savršen ukras za dnevnu sobu porodice.",
+                            text = t(
+                                "The poster is printed on 250g ultra-matte hot-pressed paper with a detailed vector display of the tree and branches. A perfect custom decoration for your living room.",
+                                "Poster se štampa na 250g ultra-mat vrelom papiru sa detaljnim vektorskim prikazom stabla i grana. Savršen ukras za dnevnu sobu porodice.",
+                                "Постер печатается на ультраматовой бумаге плотностью 250 г горячего прессования с детальным векторным отображением дерева и ветвей. Идеальное украшение для гостиной.",
+                                "Das Poster wird auf supermattes 250g-Heißpresspapier mit detaillierter Vektordarstellung des Stammbaums und der Äste gedruckt. Eine perfekte Dekoration für das Wohnzimmer.",
+                                "L'affiche est imprimée sur du papier ultra-mat de 250g pressé à chaud avec un tracé vectoriel détaillé de l'arbre et des branches. Une décoration parfaite pour le salon.",
+                                currentLanguage
+                            ),
                             fontSize = 11.sp,
-                            color = appColors.textSecondaryColor
+                            color = appColors.textSecondaryColor,
+                            fontFamily = appColors.fontFamily
                         )
 
                         Spacer(Modifier.height(8.dp))
@@ -1049,20 +1332,47 @@ fun FamilyTreeDashboard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("Cena: $sizeSelected", fontWeight = FontWeight.Bold, color = appColors.textColor)
-                                Text("Štampa + kartonski cilindar dostava", fontSize = 10.sp, color = appColors.textSecondaryColor)
+                                val cleanSelectedSize = sizeSelected.replace("A1 (Veliki Poster)", t("Large", "Veliki", "Большой", "Groß", "Grand", currentLanguage))
+                                    .replace("A2 (Srednji Poster)", t("Medium", "Srednji", "Средний", "Mittel", "Moyen", currentLanguage))
+                                    .replace("B1 Premijum", t("Premium", "Premijum", "Премиум", "Premium", "Premium", currentLanguage))
+                                Text(
+                                    text = "${t("Price", "Cena", "Цена", "Preis", "Prix", currentLanguage)}: $cleanSelectedSize",
+                                    fontWeight = FontWeight.Bold,
+                                    color = appColors.textColor,
+                                    fontFamily = appColors.fontFamily
+                                )
+                                Text(
+                                    text = t("Print + shipping in hard roll", "Štampa + kartonski cilindar dostava", "Печать + доставка в картонном тубусе", "Druck + Versand in stabiler Rolle", "Impression + livraison en tube carton", currentLanguage),
+                                    fontSize = 10.sp,
+                                    color = appColors.textSecondaryColor,
+                                    fontFamily = appColors.fontFamily
+                                )
                             }
-                            Text("Naša neto zarada: 55%", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                            Text(
+                                text = "${t("Net profit margin", "Naša neto zarada", "Наша чистая прибыль", "Netto-Marge", "Marge bénéficiaire nette", currentLanguage)}: 55%",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFF10B981),
+                                fontFamily = appColors.fontFamily
+                            )
                         }
                     }
 
                     if (generatedStatus != null) {
+                        val localizedStatus = when {
+                            generatedStatus!!.contains("Sastavljanje") -> t("Assembling tree elements...", "Sastavljanje elemenata stabla...", "Сборка элементов древа...", "Stammbaumelemente zusammenfügen...", "Assemblage des éléments de l'arbre...", currentLanguage)
+                            generatedStatus!!.contains("PDF") -> t("Creating beautiful PDF layout...", "Kreiranje prelepog PDF preloma...", "Создание красивого макета PDF...", "Erstelle ein schönes PDF-Layout...", "Création d'une belle mise en page PDF...", currentLanguage)
+                            generatedStatus!!.contains("štampariji") -> t("Sending order to partner print shop...", "Šaljem nalog partnerskoj štampariji...", "Отправка заказа партнерской типографии...", "Sende Auftrag an Partnerdruckerei...", "Envoi de la commande à l'imprimerie partenaire...", currentLanguage)
+                            generatedStatus!!.contains("Naručeno") -> t("Ordered! The product is going to production and will arrive at your doorstep in 3-5 business days! Thank you for your trust.", "Naručeno! Proizvod kreće u izradu i biće na kućnom pragu za 3-5 radnih dana! Hvala na poverenju.", "Заказано! Продукт отправлен в производство и будет у ваших дверей через 3-5 рабочих дней! Спасибо за доверие.", "Bestellt! Das Produkt geht in Produktion und wird in 3-5 Werktagen bei Ihnen eintreffen! Vielen Dank für Ihr Vertrauen.", "Commandé! Le produit part en fabrication et arrivera chez vous sous 3 à 5 jours ouvrés! Merci de votre confiance.", currentLanguage)
+                            else -> generatedStatus!!
+                        }
                         Text(
-                            generatedStatus!!,
+                            text = localizedStatus,
                             fontWeight = FontWeight.Bold,
                             color = appColors.accentColor,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            fontFamily = appColors.fontFamily
                         )
                     }
                 }
@@ -1084,7 +1394,18 @@ fun FamilyTreeDashboard(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
                     ) {
-                        Text("Simuliraj porudžbinu (€)", color = Color.White)
+                        Text(
+                            text = t(
+                                "Simulate Order (€)",
+                                "Simuliraj porudžbinu (€)",
+                                "Имитировать заказ (€)",
+                                "Bestellung simulieren (€)",
+                                "Simuler la commande (€)",
+                                currentLanguage
+                            ),
+                            color = Color.White,
+                            fontFamily = appColors.fontFamily
+                        )
                     }
                 } else {
                     Button(
@@ -1095,13 +1416,242 @@ fun FamilyTreeDashboard(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {
-                        Text("Završi", color = Color.White)
+                        Text(
+                            text = t(
+                                "Finish",
+                                "Završi",
+                                "Завершить",
+                                "Abschließen",
+                                "Terminer",
+                                currentLanguage
+                            ),
+                            color = Color.White,
+                            fontFamily = appColors.fontFamily
+                        )
                     }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPrintDialog = false }) {
-                    Text("Zatvori")
+                TextButton(onClick = { 
+                    showPrintDialog = false
+                    orderComplete = false
+                    generatedStatus = null
+                }) {
+                    Text(
+                        text = t(
+                            "Otkaži",
+                            "Otkaži",
+                            "Отмена",
+                            "Abbrechen",
+                            "Annuler",
+                            currentLanguage
+                        ),
+                        fontFamily = appColors.fontFamily
+                    )
+                }
+            }
+        )
+    }
+
+    // Social Sharing Wizard Modal
+    if (showShareDialog) {
+        val shareContext = LocalContext.current
+        var shareMessageText by remember(allMembers.size, currentLanguage) {
+            mutableStateOf(
+                t(
+                    "Gradim digitalno porodično stablo sa ${allMembers.size} članova na prelepoj KOREN (ROOT) aplikaciji! Pogledajte naše autentično porodično nasleđe: 🌳✨",
+                    "Gradim digitalno porodično stablo sa ${allMembers.size} članova na prelepoj KOREN (ROOT) aplikaciji! Pogledajte naše autentično porodično nasleđe: 🌳✨",
+                    "Я строю цифровое семейное древо из ${allMembers.size} участников в приложении KOREN! Посмотрите на наше семейное наследие: 🌳✨",
+                    "Ich baue einen digitalen Stammbaum mit ${allMembers.size} Mitgliedern in der KOREN-App! Schau dir unser Familienerbe an: 🌳✨",
+                    "Je construis un arbre généalogique numérique avec ${allMembers.size} membres sur l'application KOREN! Découvrez notre héritage: 🌳✨",
+                    currentLanguage
+                )
+            )
+        }
+
+        AlertDialog(
+            onDismissRequest = { showShareDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Share, null, tint = appColors.accentColor)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = t(
+                            "Share Family Heritage",
+                            "Podeli Porodično Nasleđe",
+                            "Поделиться наследием",
+                            "Familien-Erbe teilen",
+                            "Partager l'héritage",
+                            currentLanguage
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = appColors.fontFamily,
+                        color = appColors.textColor
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = t(
+                            "Customize your sharing message before posting to social networks:",
+                            "Prilagodite poruku za deljenje pre nego što je pošaljete na društvene mreže:",
+                            "Настройте сообщение перед публикацией в социальных сетях:",
+                            "Passe deine Nachricht an, bevor du sie in sozialen Netzwerken teilst:",
+                            "Personnalisez votre message avant de le partager sur les réseaux sociaux :",
+                            currentLanguage
+                        ),
+                        fontSize = 12.sp,
+                        color = appColors.textColor.copy(alpha = 0.8f),
+                        fontFamily = appColors.fontFamily
+                    )
+
+                    OutlinedTextField(
+                        value = shareMessageText,
+                        onValueChange = { shareMessageText = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = appColors.surfaceColor.copy(alpha = 0.4f),
+                            unfocusedContainerColor = appColors.surfaceColor.copy(alpha = 0.2f),
+                            focusedBorderColor = appColors.accentColor,
+                            unfocusedBorderColor = appColors.borderColor
+                        )
+                    )
+
+                    Text(
+                        text = t(
+                            "Select Social App to Send:",
+                            "Izaberite aplikaciju za slanje:",
+                            "Выберите приложение для отправки:",
+                            "Wähle eine App zum Senden:",
+                            "Sélectionnez l'application pour envoyer :",
+                            currentLanguage
+                        ),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = appColors.textColor,
+                        fontFamily = appColors.fontFamily
+                    )
+
+                    // Responsive share triggers
+                    val sharePlatforms = listOf(
+                        SharePlatform("WhatsApp", "com.whatsapp", Color(0xFF25D366), "💬"),
+                        SharePlatform("Viber", "com.viber.voip", Color(0xFF7360F2), "💜"),
+                        SharePlatform("Facebook", "com.facebook.katana", Color(0xFF1877F2), "🔵"),
+                        SharePlatform("Instagram", "com.instagram.android", Color(0xFFE1306C), "📸"),
+                        SharePlatform("TikTok", "com.zhiliaoapp.musically", Color(0xFF010101), "🎵"),
+                        SharePlatform("Twitter / X", "com.twitter.android", Color(0xFF000000), "🐦")
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        sharePlatforms.chunked(2).forEach { rowChips ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowChips.forEach { chip ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(chip.color)
+                                            .border(1.5.dp, if (chip.color == Color.Black) Color(0xFF00FFFF) else Color.Transparent, RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(android.content.Intent.EXTRA_TEXT, "$shareMessageText\n\nhttps://ais-pre-unpxhz2ytcok4ytvofrjfq-247852197987.europe-west2.run.app")
+                                                    setPackage(chip.packageId)
+                                                }
+                                                try {
+                                                    shareContext.startActivity(intent)
+                                                } catch (e: Exception) {
+                                                    // Fallback to system share chooser
+                                                    val fallback = android.content.Intent.createChooser(
+                                                        android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                            type = "text/plain"
+                                                            putExtra(android.content.Intent.EXTRA_TEXT, "$shareMessageText\n\nhttps://ais-pre-unpxhz2ytcok4ytvofrjfq-247852197987.europe-west2.run.app")
+                                                        },
+                                                        chip.name
+                                                    )
+                                                    shareContext.startActivity(fallback)
+                                                }
+                                            }
+                                            .padding(vertical = 10.dp, horizontal = 12.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(chip.emoji, fontSize = 16.sp)
+                                            Text(
+                                                text = chip.name,
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = appColors.fontFamily
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // General System Share
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(appColors.accentColor)
+                                .clickable {
+                                    val sendIntent = android.content.Intent().apply {
+                                        action = android.content.Intent.ACTION_SEND
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "$shareMessageText\n\nhttps://ais-pre-unpxhz2ytcok4ytvofrjfq-247852197987.europe-west2.run.app")
+                                        type = "text/plain"
+                                    }
+                                    val chooser = android.content.Intent.createChooser(sendIntent, t("Share via...", "Podeli preko...", "Поделиться через...", "Teilen über...", "Partager de...", currentLanguage))
+                                    shareContext.startActivity(chooser)
+                                }
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.Share, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Text(
+                                    text = t("More Share Options (System)", "Sve Druge Opcije (Sistemski)", "Другие опции (Системный)", "Andere Optionen", "Plus options", currentLanguage),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = appColors.fontFamily
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showShareDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
+                ) {
+                    Text(
+                        text = t("Close", "Zatvori", "Закрыть", "Schließen", "Fermer", currentLanguage),
+                        color = Color.White,
+                        fontFamily = appColors.fontFamily
+                    )
                 }
             }
         )
@@ -1131,6 +1681,7 @@ fun InteractiveTreeCanvas(
     onClearAll: () -> Unit,
     onResetDemo: () -> Unit
 ) {
+    val currentLanguage = LocalLanguage.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1146,7 +1697,7 @@ fun InteractiveTreeCanvas(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Interaktivne Grane",
+                text = t("Interactive Branches", "Interaktivne Grane", "Интерактивные ветви", "Interaktive Zweige", "Branches interactives", currentLanguage),
                 fontWeight = FontWeight.Bold,
                 color = appColors.textColor,
                 fontSize = 16.sp,
@@ -1155,10 +1706,10 @@ fun InteractiveTreeCanvas(
             
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = onResetDemo) {
-                    Text("Učitaj demo", fontSize = 11.sp, color = appColors.accentColor)
+                    Text(t("Load Demo", "Učitaj demo", "Загрузить демо", "Demo laden", "Charger démo", currentLanguage), fontSize = 11.sp, color = appColors.accentColor)
                 }
                 TextButton(onClick = onClearAll) {
-                    Text("Isprazni", fontSize = 11.sp, color = appColors.textSecondaryColor)
+                    Text(t("Clear All", "Isprazni", "Очистить всё", "Alles löschen", "Tout effacer", currentLanguage), fontSize = 11.sp, color = appColors.textSecondaryColor)
                 }
             }
         }
@@ -1186,7 +1737,14 @@ fun InteractiveTreeCanvas(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "1. GENERACIJA (Preci i Koreni)",
+                text = t(
+                    "1. GENERATION (Ancestors & Roots)",
+                    "1. GENERACIJA (Preci i Koreni)",
+                    "1. ПОКОЛЕНИЕ (Предки и корни)",
+                    "1. GENERATION (Vorfahren & Wurzeln)",
+                    "1ère GÉNÉRATION (Ancêtres & Racines)",
+                    currentLanguage
+                ),
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
                 color = appColors.textSecondaryColor,
@@ -1200,18 +1758,22 @@ fun InteractiveTreeCanvas(
             ) {
                 // Paternal Grandparents
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Očeva loza", fontSize = 8.sp, color = appColors.textSecondaryColor)
+                    Text(
+                        text = t("Paternal line", "Očeva loza", "Отцовская линия", "Väterliche Linie", "Ligne paternelle", currentLanguage),
+                        fontSize = 8.sp,
+                        color = appColors.textSecondaryColor
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         MiniMemberNode(
                             member = patGrandfather,
-                            placeholderLabel = "Deda +",
+                            placeholderLabel = t("Grandfather +", "Deda +", "Дедушка +", "Großvater +", "Grand-père +", currentLanguage),
                             onSelect = { onSetFocus(it) },
                             onAdd = { onAddRelative(father?.id ?: focusMember.id, "FATHER") },
                             appColors = appColors
                         )
                         MiniMemberNode(
                             member = patGrandmother,
-                            placeholderLabel = "Baba +",
+                            placeholderLabel = t("Grandmother +", "Baba +", "Бабушка +", "Großmutter +", "Grand-mère +", currentLanguage),
                             onSelect = { onSetFocus(it) },
                             onAdd = { onAddRelative(father?.id ?: focusMember.id, "MOTHER") },
                             appColors = appColors
@@ -1229,18 +1791,22 @@ fun InteractiveTreeCanvas(
 
                 // Maternal Grandparents
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Majčina loza", fontSize = 8.sp, color = appColors.textSecondaryColor)
+                    Text(
+                        text = t("Maternal line", "Majčina loza", "Материнская линия", "Mütterliche Linie", "Ligne maternelle", currentLanguage),
+                        fontSize = 8.sp,
+                        color = appColors.textSecondaryColor
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         MiniMemberNode(
                             member = matGrandfather,
-                            placeholderLabel = "Deda +",
+                            placeholderLabel = t("Grandfather +", "Deda +", "Дедушка +", "Großvater +", "Grand-père +", currentLanguage),
                             onSelect = { onSetFocus(it) },
                             onAdd = { onAddRelative(mother?.id ?: focusMember.id, "FATHER") },
                             appColors = appColors
                         )
                         MiniMemberNode(
                             member = matGrandmother,
-                            placeholderLabel = "Baba +",
+                            placeholderLabel = t("Grandmother +", "Baba +", "Бабушка +", "Großmutter +", "Grand-mère +", currentLanguage),
                             onSelect = { onSetFocus(it) },
                             onAdd = { onAddRelative(mother?.id ?: focusMember.id, "MOTHER") },
                             appColors = appColors
@@ -1266,7 +1832,14 @@ fun InteractiveTreeCanvas(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "2. GENERACIJA (Roditelji)",
+                    text = t(
+                        "2. GENERATION (Parents)",
+                        "2. GENERACIJA (Roditelji)",
+                        "2. ПОКОЛЕНИЕ (Родители)",
+                        "2. GENERATION (Eltern)",
+                        "2ème GÉNÉRATION (Parents)",
+                        currentLanguage
+                    ),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Black,
                     color = appColors.textSecondaryColor,
@@ -1282,8 +1855,8 @@ fun InteractiveTreeCanvas(
             ) {
                 ParentMemberNode(
                     member = father,
-                    role = "Otac",
-                    placeholderLabel = "Otac +",
+                    role = t("Father", "Otac", "Отец", "Vater", "Père", currentLanguage),
+                    placeholderLabel = t("Father +", "Otac +", "Отец +", "Vater +", "Père +", currentLanguage),
                     onSelect = { onSetFocus(it) },
                     onAdd = { onAddRelative(focusMember.id, "FATHER") },
                     appColors = appColors
@@ -1298,8 +1871,8 @@ fun InteractiveTreeCanvas(
 
                 ParentMemberNode(
                     member = mother,
-                    role = "Majka",
-                    placeholderLabel = "Majka +",
+                    role = t("Mother", "Majka", "Мать", "Mutter", "Mère", currentLanguage),
+                    placeholderLabel = t("Mother +", "Majka +", "Мать +", "Mutter +", "Mère +", currentLanguage),
                     onSelect = { onSetFocus(it) },
                     onAdd = { onAddRelative(focusMember.id, "MOTHER") },
                     appColors = appColors
@@ -1325,7 +1898,14 @@ fun InteractiveTreeCanvas(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "3. GENERACIJA (Aktivno Koleno)",
+                text = t(
+                    "3. GENERATION (Active Branch)",
+                    "3. GENERACIJA (Aktivno Koleno)",
+                    "3. ПОКОЛЕНИЕ (Активная ветвь)",
+                    "3. GENERATION (Aktiver Zweig)",
+                    "3ème GÉNÉRATION (Branche active)",
+                    currentLanguage
+                ),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = appColors.accentColor,
@@ -1379,7 +1959,7 @@ fun InteractiveTreeCanvas(
                         fontFamily = appColors.fontFamily
                     )
                     Text(
-                        text = "Fokusirana Osoba 🎯",
+                        text = "${t("Focused Person", "Fokusirana Osoba", "Фокус-персона", "Fokusierte Person", "Personne focalisée", currentLanguage)} 🎯",
                         fontSize = 9.sp,
                         color = appColors.accentColor,
                         fontWeight = FontWeight.SemiBold
@@ -1432,7 +2012,7 @@ fun InteractiveTreeCanvas(
                                 fontFamily = appColors.fontFamily
                             )
                             Text(
-                                text = "Suprug(a)",
+                                text = t("Spouse", "Suprug(a)", "Супруг(а)", "Ehepartner", "Époux(se)", currentLanguage),
                                 fontSize = 10.sp,
                                 color = appColors.textSecondaryColor
                             )
@@ -1448,7 +2028,7 @@ fun InteractiveTreeCanvas(
                             Icon(Icons.Default.Add, null, tint = appColors.accentColor)
                         }
                         Text(
-                            "Dodaj supružnika",
+                            text = t("Add spouse", "Dodaj supružnika", "Добавить супруга", "Ehepartner hinzufügen", "Ajouter un époux/se", currentLanguage),
                             fontSize = 10.sp,
                             color = appColors.textSecondaryColor,
                             modifier = Modifier.padding(top = 4.dp),
@@ -1476,7 +2056,7 @@ fun InteractiveTreeCanvas(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "BRAĆA I SESTRE",
+                    text = t("SIBLINGS", "BRAĆA I SESTRE", "БРАТЬЯ И СЕСТРЫ", "GESCHWISTER", "FRÈRES & SŒURS", currentLanguage),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = appColors.textSecondaryColor,
@@ -1484,7 +2064,12 @@ fun InteractiveTreeCanvas(
                 )
                 Spacer(Modifier.height(8.dp))
                 if (siblings.isEmpty()) {
-                    Text("Nema unete braće/sestara", fontSize = 10.sp, color = appColors.textSecondaryColor, fontStyle = FontStyle.Italic)
+                    Text(
+                        text = t("No siblings added", "Nema unete braće/sestara", "Нет добавленных братьев/сестер", "Keine Geschwister hinzugefügt", "Aucun frère/sœur ajouté", currentLanguage),
+                        fontSize = 10.sp,
+                        color = appColors.textSecondaryColor,
+                        fontStyle = FontStyle.Italic
+                    )
                 } else {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1553,7 +2138,7 @@ fun InteractiveTreeCanvas(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "POTOMCI (Deca)",
+                    text = t("DESCENDANTS (Children)", "POTOMCI (Deca)", "ПОТОМКИ (Дети)", "NACHKOMMEN (Kinder)", "DESCENDANTS (Enfants)", currentLanguage),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = appColors.textSecondaryColor,
@@ -1561,7 +2146,12 @@ fun InteractiveTreeCanvas(
                 )
                 Spacer(Modifier.height(8.dp))
                 if (children.isEmpty()) {
-                    Text("Nema unete dece", fontSize = 10.sp, color = appColors.textSecondaryColor, fontStyle = FontStyle.Italic)
+                    Text(
+                        text = t("No children added", "Nema unete dece", "Нет добавленных детей", "Keine Kinder hinzugefügt", "Aucun enfant ajouté", currentLanguage),
+                        fontSize = 10.sp,
+                        color = appColors.textSecondaryColor,
+                        fontStyle = FontStyle.Italic
+                    )
                 } else {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1967,6 +2557,8 @@ fun StorytellerAndCapsuleSection(
     appColors: ThemeConfig
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val currentLanguage = LocalLanguage.current
+    
     var prompt by remember { mutableStateOf("") }
     var aiStory by remember { mutableStateOf("") }
     var isNarratorReading by remember { mutableStateOf(false) }
@@ -1979,6 +2571,106 @@ fun StorytellerAndCapsuleSection(
     var photoIsRestoring by remember { mutableStateOf(false) }
     var isPhotoRestored by remember { mutableStateOf(false) }
 
+    // World Era Context states
+    var eraContextLoading by remember { mutableStateOf(false) }
+    var eraContextText by remember { mutableStateOf("") }
+
+    // Family Historian Q&A chatbot states
+    var historianQuery by remember { mutableStateOf("") }
+    var historianAnswer by remember { mutableStateOf("") }
+    var historianLoading by remember { mutableStateOf(false) }
+
+    // Ancestry Trivia Challenge states
+    var triviaStarted by remember { mutableStateOf(false) }
+    var triviaQuestion by remember { mutableStateOf("") }
+    var triviaOptions by remember { mutableStateOf<List<String>>(emptyList()) }
+    var triviaAnswer by remember { mutableStateOf("") }
+    var triviaFeedback by remember { mutableStateOf("") }
+    var triviaScore by remember { mutableStateOf(0) }
+    var triviaStreak by remember { mutableStateOf(0) }
+    var selectedOption by remember { mutableStateOf<String?>(null) }
+    var questionCount by remember { mutableStateOf(0) }
+
+    val generateNewTrivia: () -> Unit = {
+        if (allMembers.size >= 2) {
+            val randomMember = allMembers.random()
+            val randomType = (0..2).random()
+            selectedOption = null
+            triviaFeedback = ""
+            questionCount++
+            
+            when (randomType) {
+                0 -> {
+                    val birthPlace = randomMember.birthPlace ?: "Topola, Srbija"
+                    triviaQuestion = t(
+                        "Where was ${randomMember.firstName} ${randomMember.lastName} born?",
+                        "Gde je prema zapisima rođen(a) ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Где родился(лась) ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Wo wurde ${randomMember.firstName} ${randomMember.lastName} geboren?",
+                        "Où est né(e) ${randomMember.firstName} ${randomMember.lastName}?",
+                        currentLanguage
+                    )
+                    triviaAnswer = birthPlace
+                    
+                    val incorrect = allMembers.mapNotNull { it.birthPlace }
+                        .filter { it != birthPlace }
+                        .distinct()
+                        .shuffled()
+                        .take(3)
+                    val opts = (incorrect + birthPlace).shuffled()
+                    triviaOptions = if (opts.size < 4) {
+                        opts + listOf("Topola", "Beograd", "Kragujevac", "Novi Sad").filter { !opts.contains(it) }.take(4 - opts.size)
+                    } else opts
+                }
+                1 -> {
+                    val birthDate = randomMember.birthDate ?: "1950"
+                    val birthYear = birthDate.split(".").lastOrNull()?.trim() ?: birthDate
+                    triviaQuestion = t(
+                        "In what year was ${randomMember.firstName} ${randomMember.lastName} born?",
+                        "Koje godine je rođen(a) ${randomMember.firstName} ${randomMember.lastName}?",
+                        "В каком году родился(лась) ${randomMember.firstName} ${randomMember.lastName}?",
+                        "In welchem Jahr wurde ${randomMember.firstName} ${randomMember.lastName} geboren?",
+                        "En quelle année est né(e) ${randomMember.firstName} ${randomMember.lastName}?",
+                        currentLanguage
+                    )
+                    triviaAnswer = birthYear
+                    
+                    val incorrect = allMembers.mapNotNull { m ->
+                        m.birthDate?.split(".")?.lastOrNull()?.trim()
+                    }.filter { it != birthYear }.distinct().shuffled().take(3)
+                    val opts = (incorrect + birthYear).shuffled()
+                    triviaOptions = if (opts.size < 4) {
+                        opts + listOf("1912", "1945", "1972", "1998").filter { !opts.contains(it) }.take(4 - opts.size)
+                    } else opts
+                }
+                2 -> {
+                    val spouseId = randomMember.spouseId
+                    val spouseMember = allMembers.find { it.id == spouseId }
+                    val spouseName = spouseMember?.let { "${it.firstName} ${it.lastName}" } ?: t("Unmarried", "Nema supružnika", "Не женат/замужем", "Ledig", "Célibataire", currentLanguage)
+                    triviaQuestion = t(
+                        "Who is the spouse of ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Ko je supružnik (bračni drug) osobe ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Кто супруг(а) ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Wer ist der Ehepartner von ${randomMember.firstName} ${randomMember.lastName}?",
+                        "Qui est l'épou(se) de ${randomMember.firstName} ${randomMember.lastName}?",
+                        currentLanguage
+                    )
+                    triviaAnswer = spouseName
+                    
+                    val incorrect = allMembers.filter { it.id != randomMember.id && it.id != spouseId }
+                        .map { "${it.firstName} ${it.lastName}" }
+                        .distinct()
+                        .shuffled()
+                        .take(3)
+                    val opts = (incorrect + spouseName).shuffled()
+                    triviaOptions = if (opts.size < 4) {
+                        opts + listOf("Tetka Slavica", "Ujak Zoran", "Baka Milica", "Pradeda Čedomir").filter { !opts.contains(it) }.take(4 - opts.size)
+                    } else opts
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1987,20 +2679,215 @@ fun StorytellerAndCapsuleSection(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (focusMember == null) {
-            Text("Odaberite srodnika u stablu da biste obogatili njegovu vremensku kapsulu.", color = appColors.textSecondaryColor)
+            Text(
+                text = t(
+                    "Select a relative in the tree to enrich their historical time capsule.",
+                    "Odaberite srodnika u stablu da biste obogatili njegovu vremensku kapsulu.",
+                    "Выберите родственника в дереве, чтобы обогатить его капсулу времени.",
+                    "Wählen Sie einen Verwandten im Baum aus, um seine Zeitkapsel zu bereichern.",
+                    "Sélectionnez un membre dans l'arbre pour enrichir sa capsule temporelle.",
+                    currentLanguage
+                ),
+                color = appColors.textSecondaryColor,
+                fontFamily = appColors.fontFamily
+            )
             return
         }
 
         // Section Title
         Text(
-            "Vremenska Kapsula & AI Pripovedač",
+            text = t(
+                "Time Capsule & AI Genogram Suite",
+                "Vremenska Kapsula i AI Alati Rodoslova",
+                "Капсула времени и AI инструменты",
+                "Zeitkapsel & AI Genogram-Suite",
+                "Capsule temporelle & Suite AI",
+                currentLanguage
+            ),
             fontWeight = FontWeight.Bold,
             color = appColors.textColor,
             fontSize = 18.sp,
             fontFamily = appColors.fontFamily
         )
 
-        // Ancestor Photo Colorization / Restore Simulator
+        // 1. Ancestry Trivia Challenge (KVIZ) - MEGA VIRAL FEATURE!
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
+            border = BorderStroke(1.dp, appColors.borderColor)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.EmojiEvents, null, tint = appColors.accentColor)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = t(
+                                "Ancestry Trivia Game 🏆",
+                                "Porodični Kviz Znanja 🏆",
+                                "Семейная викторина 🏆",
+                                "Ahnen-Quizspiel 🏆",
+                                "Jeu de quiz sur les ancêtres 🏆",
+                                currentLanguage
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = appColors.textColor,
+                            fontSize = 14.sp,
+                            fontFamily = appColors.fontFamily
+                        )
+                    }
+                    if (triviaStarted) {
+                        Box(
+                            modifier = Modifier
+                                .background(appColors.accentColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${t("Streak", "Niz", "Серия", "Serie", "Série", currentLanguage)}: $triviaStreak",
+                                fontSize = 10.sp,
+                                color = appColors.textColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = t(
+                        "Test how well you actually know your ancestors! Play with family during reunions.",
+                        "Testirajte koliko dobro poznajete svoje pretke! Zabavite se sa rođacima na slavama i okupljanjima.",
+                        "Проверьте, насколько хорошо вы знаете своих предков! Играйте на семейных встречах.",
+                        "Teste, wie gut du deine Vorfahren kennst! Spiele mit deiner Familie bei Treffen.",
+                        "Testez à quel point vous connaissez vos ancêtres ! Jouez en famille.",
+                        currentLanguage
+                    ),
+                    fontSize = 11.sp,
+                    color = appColors.textSecondaryColor,
+                    fontFamily = appColors.fontFamily
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (!triviaStarted) {
+                    Button(
+                        onClick = {
+                            triviaStarted = true
+                            generateNewTrivia()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
+                    ) {
+                        Text(
+                            text = t(
+                                "Start Trivia Challenge",
+                                "Pokreni Porodični Kviz",
+                                "Начать викторину",
+                                "Quiz-Herausforderung starten",
+                                "Lancer le défi du quiz",
+                                currentLanguage
+                            ),
+                            color = Color.White,
+                            fontFamily = appColors.fontFamily
+                        )
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = triviaQuestion,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+
+                        triviaOptions.forEach { option ->
+                            val isSelected = selectedOption == option
+                            val isCorrectAnswer = option == triviaAnswer
+                            val btnBg = when {
+                                selectedOption == null -> appColors.surfaceColor.copy(alpha = 0.5f)
+                                isSelected && isCorrectAnswer -> Color(0xFF2E7D32).copy(alpha = 0.8f)
+                                isSelected && !isCorrectAnswer -> Color(0xFFC62828).copy(alpha = 0.8f)
+                                isCorrectAnswer -> Color(0xFF2E7D32).copy(alpha = 0.6f)
+                                else -> appColors.surfaceColor.copy(alpha = 0.2f)
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(btnBg)
+                                    .border(1.dp, if (isSelected) appColors.accentColor else appColors.borderColor, RoundedCornerShape(8.dp))
+                                    .clickable(enabled = selectedOption == null) {
+                                        selectedOption = option
+                                        if (option == triviaAnswer) {
+                                            triviaScore += 10
+                                            triviaStreak++
+                                            triviaFeedback = "🎉 " + t("Correct! Amazing work!", "Tačno! Neverovatan uspeh!", "Правильно! Отличная работа!", "Richtig! Großartige Arbeit!", "Correct ! Superbe travail !", currentLanguage)
+                                        } else {
+                                            triviaStreak = 0
+                                            triviaFeedback = "😢 " + t("Wrong option. Try again next!", "Netačno. Pokušajte sledeće!", "Неверно. Попробуйте еще раз!", "Falsch. Versuche es als nächstes!", "Faux. Essayez la suivante !", currentLanguage)
+                                        }
+                                    }
+                                    .padding(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(option, fontSize = 12.sp, color = appColors.textColor, fontFamily = appColors.fontFamily)
+                                    if (selectedOption != null && isCorrectAnswer) {
+                                        Icon(Icons.Default.CheckCircle, null, tint = Color.Green, modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        if (triviaFeedback.isNotBlank()) {
+                            Text(
+                                text = triviaFeedback,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = appColors.textColor,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = { generateNewTrivia() },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
+                                ) {
+                                    Text(
+                                        text = t("Next Question →", "Sledeće Pitanje →", "Следующий вопрос →", "Nächste Frage →", "Question suivante →", currentLanguage),
+                                        color = Color.White
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { 
+                                        triviaStarted = false
+                                        triviaStreak = 0
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textColor)
+                                ) {
+                                    Text(t("Exit", "Izađi", "Выйти", "Beenden", "Quitter", currentLanguage))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Ancestor Photo Colorization / Restore Simulator
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
@@ -2008,16 +2895,32 @@ fun StorytellerAndCapsuleSection(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    "AI Restaurator slika predaka",
+                    text = t(
+                        "AI Ancestor Photo Restorer 📸",
+                        "AI Restaurator slika predaka 📸",
+                        "AI Реставратор старых фото 📸",
+                        "AI Ahnenfotorestaurator 📸",
+                        "AI Restaurateur de photos d'ancêtres 📸",
+                        currentLanguage
+                    ),
                     fontWeight = FontWeight.Bold,
                     color = appColors.textColor,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    fontFamily = appColors.fontFamily
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Koristite neuronske mreže da automatski izoštrite i unesete prelepe boje u oštećene fotografije predaka.",
+                    text = t(
+                        "Use modern neural networks to automatically denoise and colorize damaged historical photos of your ancestors.",
+                        "Koristite neuronske mreže da automatski izoštrite i unesete prelepe boje u oštećene fotografije predaka.",
+                        "Используйте нейросети для автоматической очистки и колоризации поврежденных исторических фото.",
+                        "Nutze neuronale Netze, um beschädigte historische Fotos deiner Ahnen automatisch zu entrauschen und zu färben.",
+                        "Utilisez des réseaux neuronaux pour restaurer et coloriser les photos historiques endommagées.",
+                        currentLanguage
+                    ),
                     fontSize = 11.sp,
-                    color = appColors.textSecondaryColor
+                    color = appColors.textSecondaryColor,
+                    fontFamily = appColors.fontFamily
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
@@ -2034,7 +2937,6 @@ fun StorytellerAndCapsuleSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Canvas(modifier = Modifier.fillMaxSize()) {
-                            // Draws simulated split between black/white and colored profile
                             drawRect(
                                 color = if (isPhotoRestored) Color(0xFFCE6A50) else Color.DarkGray,
                                 size = size
@@ -2053,10 +2955,15 @@ fun StorytellerAndCapsuleSection(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isPhotoRestored) "Fotografija uspešno obojena!" else "Stanje fotografije: Crno-bela (oštećena)",
+                            text = if (isPhotoRestored) {
+                                t("Photo beautifully colored!", "Fotografija uspešno obojena!", "Фото успешно колоризовано!", "Foto schön gefärbt!", "Photo colorisée avec succès !", currentLanguage)
+                            } else {
+                                t("State: Black & White / Damaged", "Stanje fotografije: Crno-bela (oštećena)", "Состояние: Черно-белая / Повреждена", "Status: Schwarz-Weiß / Beschädigt", "État : Noir & Blanc / Endommagé", currentLanguage)
+                            },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = appColors.textColor
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily
                         )
                         Spacer(Modifier.height(8.dp))
                         Button(
@@ -2072,14 +2979,19 @@ fun StorytellerAndCapsuleSection(
                             enabled = !photoIsRestoring && !isPhotoRestored,
                             modifier = Modifier.fillMaxWidth().testTag("photo_restore_btn")
                         ) {
-                            Text(if (isPhotoRestored) "Završeno" else "Ukloni oštećenja i oboj sliku", fontSize = 11.sp, color = Color.White)
+                            Text(
+                                text = if (isPhotoRestored) t("Done", "Završeno", "Готово", "Fertig", "Terminé", currentLanguage) else t("Remove Dents & Colorize", "Ukloni oštećenja i oboj sliku", "Восстановить и колоризовать", "Kratzer entfernen & Färben", "Restaurer & Coloriser", currentLanguage),
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                fontFamily = appColors.fontFamily
+                            )
                         }
                     }
                 }
             }
         }
 
-        // AI Storyteller generator directly leveraging model instructions
+        // 3. Artistic AI Storyteller (REAL GEMINI INTEGRATION & FALLBACK!)
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
@@ -2090,23 +3002,51 @@ fun StorytellerAndCapsuleSection(
                     Icon(Icons.Default.AutoStories, null, tint = appColors.accentColor)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Umetnički AI Pripovedač",
+                        text = t(
+                            "Artistic AI Storyteller (Live) ✨",
+                            "Umetnički AI Pripovedač (Uživo) ✨",
+                            "Художественный AI Рассказчик ✨",
+                            "Künstlerischer AI-Erzähler (Live) ✨",
+                            "Narrateur AI artistique (Direct) ✨",
+                            currentLanguage
+                        ),
                         fontWeight = FontWeight.Bold,
                         color = appColors.textColor,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        fontFamily = appColors.fontFamily
                     )
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Upišite nekoliko bazičnih reči ili ključnih sećanja (npr. gde je radio, anegdote), a AI će isplesti romansiranu biografsku audio priču.",
+                    text = t(
+                        "Type standard phrases or anecdotes (e.g. they played accordion, built cabins), and the advanced Gemini AI will instantly weave a rich cinematic biography.",
+                        "Upišite nekoliko bazičnih reči ili ključnih sećanja (npr. gde je radio, anegdote), a AI će isplesti romansiranu biografsku audio priču.",
+                        "Введите базовые фразы или воспоминания, и искусственный интеллект сразу создаст кинематографическую биографию.",
+                        "Gib kurze Sätze oder Geschichten ein, und Gemini AI webt daraus eine filmreife Biographie.",
+                        "Saisissez des anecdotes et l'intelligence artificielle tissera une notice biographique captivante.",
+                        currentLanguage
+                    ),
                     fontSize = 11.sp,
-                    color = appColors.textSecondaryColor
+                    color = appColors.textSecondaryColor,
+                    fontFamily = appColors.fontFamily
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
-                    placeholder = { Text("Primer: Bio je veseo, preživeo je rat, svirao harmoniku...", fontSize = 11.sp) },
+                    placeholder = { 
+                        Text(
+                            text = t(
+                                "Example: Hardworking blacksmith, loved cherry orchard, built a wood mill...",
+                                "Primer: Bio je vredan zidar, voleo voćnjak trešanja, svirao harmoniku...",
+                                "Пример: Трудолюбивый кузнец, любил вишневый сад, построил водяную мельницу...",
+                                "Beispiel: Fleißiger Schmied, liebte den Kirschgarten...",
+                                "Exemple : Forgeron travailleur, aimait le verger...",
+                                currentLanguage
+                            ),
+                            fontSize = 11.sp
+                        ) 
+                    },
                     modifier = Modifier.fillMaxWidth().testTag("ai_biography_prompt"),
                     maxLines = 3,
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = appColors.textColor, unfocusedTextColor = appColors.textColor)
@@ -2116,8 +3056,24 @@ fun StorytellerAndCapsuleSection(
                     onClick = {
                         coroutineScope.launch {
                             isStoryLoading = true
-                            delay(1800)
-                            aiStory = "U pitomom delu Šumadije, odakle loza ${focusMember.lastName} vuče korene, pripoveda se o vremenu kada je ${focusMember.firstName} koračao ovim prostorima. ${if (prompt.isNotBlank()) prompt else "Doneo je blagost u dom i osmeh svakoj duši koju srete."} Ostavio je neizbrisivo svedočanstvo o vrednosti, istrajnosti i ljubavi prema kućnom pragu. Generacije svedoče o pesmi vetra u voćnjaku i sećanju koje nikada neće uvenuti."
+                            try {
+                                aiStory = com.example.data.GeminiService.generateStory(
+                                    firstName = focusMember.firstName,
+                                    lastName = focusMember.lastName,
+                                    gender = focusMember.gender,
+                                    birthDate = focusMember.birthDate,
+                                    birthPlace = focusMember.birthPlace,
+                                    deathDate = focusMember.deathDate,
+                                    deathPlace = focusMember.deathPlace,
+                                    biography = focusMember.biography,
+                                    customPrompt = prompt,
+                                    lang = currentLanguage
+                                )
+                            } catch (e: Exception) {
+                                aiStory = com.example.data.GeminiService.getPromptTemplateFallback(
+                                    focusMember.firstName, focusMember.lastName, focusMember.gender, focusMember.birthDate, focusMember.birthPlace, prompt, currentLanguage
+                                )
+                            }
                             isStoryLoading = false
                         }
                     },
@@ -2127,7 +3083,18 @@ fun StorytellerAndCapsuleSection(
                     if (isStoryLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
                     } else {
-                        Text("Generiši Romansiranu Priču (AI)", color = Color.White)
+                        Text(
+                            text = t(
+                                "Generate Cinematic Tale (AI)",
+                                "Generiši Romansiranu Priču (AI)",
+                                "Создать красивую историю (AI)",
+                                "Cinematic-Geschichte generieren (AI)",
+                                "Générer un récit captivant (AI)",
+                                currentLanguage
+                            ),
+                            color = Color.White,
+                            fontFamily = appColors.fontFamily
+                        )
                     }
                 }
 
@@ -2141,14 +3108,14 @@ fun StorytellerAndCapsuleSection(
                     ) {
                         Column {
                             Text(
-                                aiStory,
+                                text = aiStory,
                                 fontSize = 12.sp,
                                 fontStyle = FontStyle.Italic,
                                 color = appColors.textColor,
-                                lineHeight = 18.sp
+                                lineHeight = 18.sp,
+                                fontFamily = appColors.fontFamily
                             )
                             Spacer(Modifier.height(10.dp))
-                            // Simulated Audiobook/Reader
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -2163,9 +3130,14 @@ fun StorytellerAndCapsuleSection(
                                         )
                                     }
                                     Text(
-                                        if (isNarratorReading) "AI Glas čita..." else "Slušaj biografsku audio knjigu",
+                                        text = if (isNarratorReading) {
+                                            t("AI Narrator reading aloud...", "AI Glas čita priču...", "AI Голос читает вслух...", "AI-Stimme liest vor...", "Voix AI lit l'histoire...", currentLanguage)
+                                        } else {
+                                            t("Tap to listen (Audiobook)", "Slušaj biografsku audio knjigu", "Слушать аудиокнигу", "Anhören (Hörbuch)", "Écouter l'audiolivre", currentLanguage)
+                                        },
                                         fontSize = 11.sp,
-                                        color = appColors.textSecondaryColor
+                                        color = appColors.textSecondaryColor,
+                                        fontFamily = appColors.fontFamily
                                     )
                                 }
                                 if (isNarratorReading) {
@@ -2178,7 +3150,460 @@ fun StorytellerAndCapsuleSection(
             }
         }
 
-        // Realtime Collaboration - Viber / Slack Space simulator
+        // 4. AI Family Historian Chat Companion (MEMBER Q&A CHATBOOT)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
+            border = BorderStroke(1.dp, appColors.borderColor)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.SupportAgent, null, tint = appColors.accentColor)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = t(
+                            "AI Family Historian Q&A 📖",
+                            "AI Istoričar Porodice (Pitanja) 📖",
+                            "AI Историк семьи (Чат) 📖",
+                            "AI Familienhistoriker Q&A 📖",
+                            "AI Historien Q&A de Famille 📖",
+                            currentLanguage
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        color = appColors.textColor,
+                        fontSize = 14.sp,
+                        fontFamily = appColors.fontFamily
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = t(
+                        "Ask the intelligent historian chatbot questions about lineage, oldest members, or draft custom family greetings and poems!",
+                        "Razgovarajte sa AI istoričarem porodice! Pitajte o srodstvu, ko su najstariji preci, ili zatražite da napiše pesmicu.",
+                        "Спросите чат-бота о родословной, старейших предках или попросите написать стихотворение о семье!",
+                        "Frage den intelligenten Historiker-Chatbot nach Wurzeln, alten Beziehungen oder Gedichten!",
+                        "Posez des questions sur votre lignée ou demandez-lui d'écrire un poème sur vos ancêtres !",
+                        currentLanguage
+                    ),
+                    fontSize = 11.sp,
+                    color = appColors.textSecondaryColor,
+                    fontFamily = appColors.fontFamily
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = historianQuery,
+                    onValueChange = { historianQuery = it },
+                    placeholder = { 
+                        Text(
+                            text = t(
+                                "Ask: Write a brief poem praising my grandfather's roots...",
+                                "Pitajte: Napiši mi pesmicu o korenima moje familije...",
+                                "Спросите: Напиши стих о моих предках...",
+                                "Frage: Schreibe ein Gedicht über meine Ahnen...",
+                                "Demandez : Écris un poème sur mes grands-parents...",
+                                currentLanguage
+                            ),
+                            fontSize = 11.sp
+                        ) 
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2,
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = appColors.textColor, unfocusedTextColor = appColors.textColor)
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                historianLoading = true
+                                historianAnswer = com.example.data.GeminiService.askHistorian(historianQuery, allMembers, currentLanguage)
+                                historianLoading = false
+                            }
+                        },
+                        modifier = Modifier.weight(1.3f),
+                        colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
+                    ) {
+                        if (historianLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                        } else {
+                            Text(
+                                text = t("Ask Historian 🎤", "Pitaj Istoričara 🎤", "Спросить 🎤", "Fragen 🎤", "Poser la question 🎤", currentLanguage),
+                                color = Color.White,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            historianQuery = t(
+                                "Write a beautiful short greeting poem about my lineage and descendants",
+                                "Napiši dirljivu kratku pesmu o našoj porodičnoj lozi i tradicijama",
+                                "Напиши глубокое стихотворение о корнях моей семьи и потомках",
+                                "Schreibe ein schönes Gedicht über unsere Wurzeln",
+                                "Écris un court poème émouvant sur notre lignée et nos traditions",
+                                currentLanguage
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = appColors.textColor)
+                    ) {
+                        Text(
+                            text = t("Preset Poetry 📝", "Sastavi Stih 📝", "Стих 📝", "Gedicht 📝", "Créer un poème 📝", currentLanguage),
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+                if (historianAnswer.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = historianAnswer,
+                            fontSize = 12.sp,
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // 5. AI World Historical Era Context Explorer!
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
+            border = BorderStroke(1.dp, appColors.borderColor)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = t(
+                        "AI Historical Era Travel 🕰️",
+                        "AI Vremenski Putnik (Istorijska Era) 🕰️",
+                        "AI Историческая эпоха предка 🕰️",
+                        "AI Historische Epochenreise 🕰️",
+                        "Aventures temporelles AI 🕰️",
+                        currentLanguage
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = appColors.textColor,
+                    fontSize = 14.sp,
+                    fontFamily = appColors.fontFamily
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${t("Analyze world history events in", "Istražite istorijski kontekst i sudbonosna zbivanja u svetu tokom godine", "Анализировать мировые события в году", "Analysiere Weltereignisse im Jahr", "Analyser les événements mondiaux de l'année", currentLanguage)} " + 
+                           "${focusMember.birthDate?.split(".")?.lastOrNull()?.trim() ?: "1912"} " + 
+                           "${t("when this ancestor was born.", "kada je srodnik rođen.", "когда родился этот родственник.", "als dieser Ahn geboren wurde.", "lors de la naissance de cet ancêtre.", currentLanguage)}",
+                    fontSize = 11.sp,
+                    color = appColors.textSecondaryColor,
+                    fontFamily = appColors.fontFamily
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            eraContextLoading = true
+                            try {
+                                val year = focusMember.birthDate?.split(".")?.lastOrNull()?.trim() ?: "1912"
+                                eraContextText = com.example.data.GeminiService.exploreEraContext(year, focusMember.birthPlace, currentLanguage)
+                            } catch (e: Exception) {
+                                eraContextText = t("Error loading history details.", "Greška pri analizi epohe.", "Ошибка загрузки истории.", "Fehler.", "Erreur.", currentLanguage)
+                            }
+                            eraContextLoading = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = appColors.accentColor)
+                ) {
+                    if (eraContextLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                    } else {
+                        Text(
+                            text = t("Explore Grand History Eras", "Istraži Istorijska Zbivanja Epohe", "Исследовать события эпохи", "Historische Epoche erkunden", "Explorer l'époque historique", currentLanguage),
+                            color = Color.White,
+                            fontFamily = appColors.fontFamily
+                        )
+                    }
+                }
+
+                if (eraContextText.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = eraContextText,
+                            fontSize = 11.sp,
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // 5.5 Hometown Vintage Snapshot 🏮 - EXTREMELY IMMERSIVE HISTORICAL VISUAL SNAPSHOTS!
+        val birthPlaceRaw = focusMember.birthPlace ?: ""
+        val birthPlaceClean = getLocalizedText(birthPlaceRaw, currentLanguage)
+
+        if (birthPlaceClean.isNotBlank()) {
+            val birthYear = focusMember.birthDate?.split(".")?.lastOrNull()?.trim() ?: "1912"
+            val drawableRes = when {
+                birthPlaceRaw.contains("Belgrade", ignoreCase = true) || birthPlaceRaw.contains("Beograd", ignoreCase = true) -> {
+                    com.example.R.drawable.img_historical_belgrade
+                }
+                birthPlaceRaw.contains("Topola", ignoreCase = true) -> {
+                    com.example.R.drawable.img_historical_topola
+                }
+                birthPlaceRaw.contains("Paris", ignoreCase = true) -> {
+                    com.example.R.drawable.img_historical_paris
+                }
+                else -> null
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth().testTag("hometown_vintage_card"),
+                colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
+                border = BorderStroke(1.dp, appColors.borderColor)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Landscape, null, tint = appColors.accentColor)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = t(
+                                    "Hometown Vintage Snapshot 🏮",
+                                    "Zavičajna Istorijska Razglednica 🏮",
+                                    "Историческая открытка родины 🏮",
+                                    "Heimat-Postkarte im Vintage-Stil 🏮",
+                                    "Carte postale vintage d'origine 🏮",
+                                    currentLanguage
+                                ),
+                                fontWeight = FontWeight.Bold,
+                                color = appColors.textColor,
+                                fontSize = 14.sp,
+                                fontFamily = appColors.fontFamily
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = t(
+                            "See how the birthplace of your ancestor looked during their lifetime with dynamic historical illustration cards.",
+                            "Pogledajte kako je rodno mesto vašeg pretka izgledalo u doba njegovog života kroz prelepe retro razglednice.",
+                            "Посмотрите, как выглядела родина вашего предка в годы его жизни, на исторических открытках.",
+                            "Erlebe, wie der Geburtsort deines Vorfahren zu seinen Lebzeiten aussah mit historischen Postkarten.",
+                            "Découvrez à quoi ressemblait le lieu de naissance de votre ancêtre à son époque avec des cartes postales d'époque.",
+                            currentLanguage
+                        ),
+                        fontSize = 11.sp,
+                        color = appColors.textSecondaryColor,
+                        fontFamily = appColors.fontFamily
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (drawableRes != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(190.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, appColors.borderColor, RoundedCornerShape(12.dp))
+                        ) {
+                            Image(
+                                painter = painterResource(id = drawableRes),
+                                contentDescription = "Historical view of $birthPlaceClean",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            // Vintage overlay stamp inside the image
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(4.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "$birthPlaceClean ($birthYear)",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.DarkGray
+                                )
+                            }
+                        }
+                    } else {
+                        // Procedurally styled stunning simulated vintage post envelope or postcard!
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Brush.linearGradient(listOf(appColors.surfaceColor, appColors.borderColor.copy(alpha = 0.5f))))
+                                .border(1.dp, appColors.borderColor, RoundedCornerShape(12.dp))
+                        ) {
+                            // Draw a vintage postcard envelope layout
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                // Draw diagonal lines on borders (vintage airmail envelope style)
+                                val stripeWidth = 10f
+                                for (i in 0..size.width.toInt() step 40) {
+                                    drawLine(
+                                        color = Color(0xFFC62828).copy(alpha = 0.15f),
+                                        start = Offset(i.toFloat(), 0f),
+                                        end = Offset(i.toFloat() + stripeWidth, 20f),
+                                        strokeWidth = 3f
+                                    )
+                                    drawLine(
+                                        color = Color(0xFF1565C0).copy(alpha = 0.15f),
+                                        start = Offset(i.toFloat() + 20f, size.height - 20f),
+                                        end = Offset(i.toFloat() + 20f + stripeWidth, size.height),
+                                        strokeWidth = 3f
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1.2f),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Default.MarkunreadMailbox, null, tint = appColors.accentColor.copy(alpha = 0.7f), modifier = Modifier.size(32.dp))
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        text = t("Heritage Postcard", "Rodna Razglednica", "Родная открытка", "Heimatbrief", "Carte d'origine", currentLanguage),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = appColors.textColor,
+                                        fontFamily = appColors.fontFamily
+                                    )
+                                    Text(
+                                        text = "$birthPlaceClean ($birthYear)",
+                                        fontSize = 11.sp,
+                                        color = appColors.textSecondaryColor,
+                                        fontFamily = appColors.fontFamily
+                                    )
+                                }
+
+                                // Interactive Vintage Wax Seal or stamp representation
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(Color(0xFF8B0000).copy(alpha = 0.85f), CircleShape)
+                                        .border(2.dp, Color(0xFFFFD700).copy(alpha = 0.6f), CircleShape)
+                                        .shadow(4.dp, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "PAST",
+                                            fontSize = 9.sp,
+                                            color = Color(0xFFFFD700),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Icon(Icons.Default.FilterVintage, null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
+                                        Text(
+                                            text = birthYear,
+                                            fontSize = 9.sp,
+                                            color = Color(0xFFFFD700),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Historical descriptions of the place in that decade
+                    val localHistoricalFact = when {
+                        birthPlaceRaw.contains("Belgrade", ignoreCase = true) || birthPlaceRaw.contains("Beograd", ignoreCase = true) -> {
+                            t(
+                                "Belgrade at this period transition was teeming with nostalgic horse carriages, cobblestone alleys, and early streetlights, with Terazije square serving as the royal focal heart.",
+                                "Beograd je u ovom zlatnom periodu bio pun fijakera, turske kaldrme i prvih plinskih lampi, dok su Terazije pulsirale radosnim građanskim duhom i prelepim salonima.",
+                                "Белград в этот золотой период был полон извозчиков, турецкой брусчатки и первых газовых фонарей.",
+                                "Belgrad war in dieser Zeit voller Pferdekutschen, traditionellem Pflaster und frühen Gaslaternen.",
+                                "Belgrade à cette époque était animée par les diligences, les pavés anciens, et les premiers réverbères.",
+                                currentLanguage
+                            )
+                        }
+                        birthPlaceRaw.contains("Topola", ignoreCase = true) -> {
+                            t(
+                                "Topola was a tranquil village under the oak forests of Oplenac, famous for traditional vineyards and red-roofed stone homesteads carrying medieval heroism.",
+                                "Topola je bila mirno vinogradarsko mesto u senci hrastovih šuma Oplenca, poznata po starim kamenim podrumima, pčelarima i mirisu slavske pogače na ognjištu.",
+                                "Топола была мирной винодельческой деревней в тени дубовых лесов Опленца.",
+                                "Topola war ein ruhiges Winzerdorf im Schatten der Oplenac-Eichenwälder.",
+                                "Topola était un paisible village de viticulteurs à l'ombre de la forêt d'Oplenac.",
+                                currentLanguage
+                            )
+                        }
+                        birthPlaceRaw.contains("Paris", ignoreCase = true) -> {
+                            t(
+                                "Paris of this historical era had massive stone boulevards, vintage horse-drawn omnibuses, gas-lit avenues, and bustling bohemian workshops near Seine.",
+                                "Pariz ove epohe krasile su kamene avenije, prvi tramvaji sa konjskom vučom, boemski saloni uz Senu i ulični prodavci ruža.",
+                                "Париж этой эпохи отличался каменными проспектами и первыми конными трамваями.",
+                                "Paris dieser Ära war geprägt von steinernen Alleen und dem Charme der Seine-Künstler.",
+                                "Le Paris de cette époque était marqué par de grands boulevards en pierre et les omnibus.",
+                                currentLanguage
+                            )
+                        }
+                        else -> {
+                            t(
+                                "This homeland featured rich agricultural fields, historic cobblestone streets, local artisan guilds, stable family zadrugas, and historical merchant squares.",
+                                "Ovaj zavičaj u to vreme krasile su tradicionalne porodične zadruge, kaldrmisane stražarske staze i zanatlije koje su vredno radile na drvenim vodenicama.",
+                                "Эта родина в то время отличалась традиционными семейными усадьбами и ремесленными мастерскими.",
+                                "Diese Heimat zeichnete sich damals durch traditionelle Gehöfte und handwerkliche Werkstätten aus.",
+                                "Cette région d'origine se caractérisait alors par des maisons familiales traditionnelles et des ateliers.",
+                                currentLanguage
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(appColors.borderColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = localHistoricalFact,
+                            fontSize = 11.sp,
+                            fontStyle = FontStyle.Italic,
+                            color = appColors.textColor,
+                            fontFamily = appColors.fontFamily,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // 6. Realtime Collaboration - Viber / Slack Space simulator
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = appColors.surfaceColor),
@@ -2513,4 +3938,11 @@ data class ThemeConfig(
     val glowColor: Color,
     val fontFamily: FontFamily,
     val meshBlurEnabled: Boolean
+)
+
+data class SharePlatform(
+    val name: String,
+    val packageId: String,
+    val color: Color,
+    val emoji: String
 )
